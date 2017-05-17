@@ -6,6 +6,14 @@
 #include <sstream>
 #include <iomanip>
 
+/**
+ * TODO
+ * 1. add description header
+ * 2. fix add item x/y position check/add dont allow 0/0 (x, y > 0)
+ * 3. add warehouse positions representation print into file
+ * 4. add functions description
+ */
+
 using namespace std;
 int state = 0;
 struct Item {
