@@ -46,13 +46,14 @@ struct Item {
 bool isInited = false;
 int width;
 int height;
-vector<vector<bool> > storage;
+int size;
+vector<vector<int> > storage;
 
 //delete this code for a release version
 vector<Item> data = {
-        Item ("test", "test", 0, 0),
-        Item ("test1", "test2", 0, 1),
-        Item ("test3", "test3", 3, 6),
+        Item ("apples", "a box of fresh apples", 0, 0),
+        Item ("oranges", "picked by mama in the garden", 0, 1),
+        Item ("apples & oranges", "srsly why can't we compare those two fruits", 3, 6),
 };
 
 void showState();
@@ -62,8 +63,10 @@ void findItem(int);
 void listItems();
 void deleteItem();
 void writeData();
+void readData();
 void showStorage();
 bool setDimensions();
+bool getSizeLeft();
 
 int main() {
     isInited = setDimensions();
@@ -80,10 +83,11 @@ int main() {
  */
 void showState() {
     switch(state) {
+        case 9:
+            readData();
         case 8:
             cout << "Good by!";
             exit(1);
-            break;
         case 7:
             showStorage();
             break;
@@ -116,13 +120,14 @@ void showState() {
  */
 void showMenu() {
     cout << "1. Add Item\n";
-    cout << "2. Find by primary key\n";
-    cout << "3. Find by secondary key\n";
+    cout << "2. Find by name\n";
+    cout << "3. Find by description\n";
     cout << "4. Delete Item\n";
     cout << "5. List Items\n";
     cout << "6. Write data into file\n";
     cout << "7. Show storage\n";
-    cout << "8. Exit\n\n";
+    cout << "8. Exit\n";
+    cout << "9. Read file\n\n";
 
 
     cout << "What will we do? ";
@@ -141,9 +146,9 @@ bool setDimensions() {
     if(width > 0 && height > 0) {
         //fill the storage variable with empty slots
         for(int row=0;row<height;row++) {
-            vector<bool> rowArr;
+            vector<int> rowArr;
             for (int col=0;col<width; col++) {
-                rowArr.push_back(false);
+                rowArr.push_back(-1);
             }
 
             storage.push_back(rowArr);
@@ -151,9 +156,10 @@ bool setDimensions() {
         }
 
         //delete this code for a release version
-        storage[0][0] = true;
-        storage[0][1] = true;
-        storage[3][6] = true;
+
+        storage[0][0] = 1;
+        storage[0][1] = 2;
+        storage[3][6] = 3;
         return true;
     }
     return false;
@@ -172,8 +178,8 @@ void showStorage() {
         cout << left << setw(4) << (row+1) << "|";
 
         for (int col=0;col<width; col++) {
-            if(storage[row][col]) {
-                cout << "X";
+            if(storage[row][col] != -1) {
+                cout << storage[row][col];
             } else {
                 cout << " ";
             }
@@ -201,7 +207,7 @@ void deleteItem() {
     cin >> index;
 
     //clear storage array
-    storage[data[index-1].x][data[index-1].y] = false;
+    storage[data[index-1].x][data[index-1].y] = -1;
 
     data.erase (data.begin()+(index-1));
 
@@ -216,6 +222,8 @@ void deleteItem() {
  */
 bool getItemProps(Item & newItem) {
 
+    int x, y;
+    string tempStr;
     //if name||descrition were not specified(first time add)
     if(newItem.primary == "") {
         cout << "Enter name: ";
@@ -226,15 +234,19 @@ bool getItemProps(Item & newItem) {
     if(newItem.secondary == "") {
         cout << "Enter description: ";
         cin.ignore();
-        getline(cin, newItem.secondary);
+        getline(cin, tempStr);
+        newItem.secondary = tempStr;
     }
 
     cout << "Enter x position: ";
-    cin >> newItem.x;
+    cin >> x;
     cout << "Enter y position: ";
-    cin >> newItem.y;
+    cin >> y;
 
-    if(newItem.x < 0 || newItem.y < 0 || storage[newItem.x][newItem.y]) {
+    newItem.x = x-1;
+    newItem.y = y-1;
+
+    if(newItem.x < 0 || newItem.y < 0 || storage[newItem.x][newItem.y] != -1) {
         return false;
     }
     return true;
@@ -268,10 +280,12 @@ void addItem() {
             for(int row=0;row<width && !itemCreated;row++) {
 
                 for (int col=0;col<height && !itemCreated; col++) {
-                    if(!storage[row][col]) {
+                    if(storage[row][col] == -1) {
                         newItem.x = row;
                         newItem.y = col;
                         itemCreated = true;
+
+                        cout << "Generated position is: " << newItem.x+1 << ":" << newItem.y+1 << endl;
                     }
                 }
             }
@@ -283,7 +297,7 @@ void addItem() {
     //Insert item to data array
     data.push_back(newItem);
     //dont forget to update the dimensions array
-    storage[newItem.x][newItem.y] = true;
+    storage[newItem.x][newItem.y] = (int) data.size();
 
     cout << "Created element index is " << data.size() << endl << endl;
     state = 0;
@@ -298,7 +312,7 @@ void listItems() {
 
     cout << left << setw(10)
          << "Index" << setw(20)
-         << "Primary" << setw(30)
+         << "Primary" << setw(60)
          << "Secondary" << setw(10)
          << "X" << setw(10)
          << "Y" << endl;
@@ -306,10 +320,10 @@ void listItems() {
     for (int i = 0; i < data.size(); i++) {
         cout << left << setw(10)
              << i+1 << setw(20)
-             << data[i].primary << setw(30)
+             << data[i].primary << setw(60)
              << data[i].secondary << setw(10)
-             << data[i].x << setw(10)
-             << data[i].y << endl;
+             << data[i].x+1 << setw(10)
+             << data[i].y+1 << endl;
     }
 
     cout << "\n\n";
@@ -324,14 +338,30 @@ void listItems() {
  */
 void findItem(int key) {
     int index = key + 1;
-    vector<Item> result;
+    //we need the original position of the element so we create additional structure for that
+    struct IR {
+        string primary;
+        string secondary;
+        int x;
+        int y;
+        int pos;
+    };
+    vector<IR> result;
     string searchStr;
     cout << "Enter search value: ";
     cin >> searchStr;
     for(int i=0;i<data.size();i++) {
         string value = data[i].get(index);
         if(value.find(searchStr) != -1) {
-            result.push_back(data[i]);
+            //i wonder id we could do this more efficient
+            IR _tmp = {
+                    data[i].primary,
+                    data[i].secondary,
+                    data[i].x,
+                    data[i].y,
+                    i+1
+            };
+            result.push_back(_tmp);
         }
     }
 
@@ -339,21 +369,47 @@ void findItem(int key) {
 
     cout << left << setw(10)
          << "Index" << setw(20)
-         << "Primary" << setw(30)
+         << "Primary" << setw(60)
          << "Secondary" << setw(10)
          << "X" << setw(10)
          << "Y" << endl;
 
-    for (int i = 0; i < data.size(); i++) {
+    for (int i = 0; i < result.size(); i++) {
         cout << left << setw(10)
-             << i+1 << setw(20)
-             << result[i].primary << setw(30)
+             << result[i].pos << setw(20)
+             << result[i].primary << setw(60)
              << result[i].secondary << setw(10)
-             << result[i].x << setw(10)
-             << result[i].y << endl;
+             << result[i].x+1 << setw(10)
+             << result[i].y+1 << endl;
     }
 
     cout << "\n\n";
+
+    state = 0;
+    showState();
+}
+
+void readData() {
+    ifstream infile;
+    string fileName;
+
+    cout << "Enter file name: ";
+    cin >> fileName;
+
+    while (fileName.length() < 5 || fileName.substr(fileName.length()-4, 4) != ".txt") {
+        cout << "File should be in .txt: ";
+        cin >> fileName;
+    }
+
+    infile.open(fileName);
+
+    if (!infile.is_open()) {
+        cout << "Error. Couldn't create file " << fileName << endl;
+        state = 0;
+        showState();
+    }
+
+    infile.close();
 
     state = 0;
     showState();
@@ -384,7 +440,7 @@ void writeData() {
 
     outfile << left << setw(10)
             << "Index" << setw(20)
-            << "Primary" << setw(30)
+            << "Primary" << setw(60)
             << "Secondary" << setw(10)
             << "X" << setw(10)
             << "Y" << endl;
@@ -392,10 +448,10 @@ void writeData() {
     for (int i = 0; i < data.size(); i++) {
         outfile << left << setw(10)
                 << i+1 << setw(20)
-                << data[i].primary << setw(30)
+                << data[i].primary << setw(60)
                 << data[i].secondary << setw(10)
-                << data[i].x << setw(10)
-                << data[i].y << endl;
+                << data[i].x+1 << setw(10)
+                << data[i].y+1 << endl;
     }
 
     outfile.close();
